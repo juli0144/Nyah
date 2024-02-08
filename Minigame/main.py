@@ -1,204 +1,130 @@
-import random
-import time
+import multiprocessing
+import playsound
+import customtkinter as ctk
+from PIL import Image
 
-# def timer():
-#    count = 0
-#    while True:
-#        time.sleep(1)
-#        count += 1
+from Funktions import *
 
 
-class Player:
-    def __init__(self, hp, dodge, gold):
-        self.hp = hp
-        self.dodge = dodge
-        self.gold = gold
+# Unused funktion to load pictures for the Future
+def load_image(file):
+    return ctk.CTkImage(Image.open(file), size=(600, 400))
+    # ImageTk.PhotoImage(Image.open(file))
 
 
-class Monster:
-    def __init__(self, name, hp, damage, crit_chance, attacks, reward):
-        self.name = name
-        self.hp = hp
-        self.damage = damage
-        self.crit_chance = crit_chance
-        self.attacks = attacks
-        self.reward = reward
+def _play_audio(audiofile):
+    playsound.playsound(audiofile)
 
 
-class Weapon:
-    def __init__(self, name,  durability, damage, crit_chance, attacks):
-        self.name = name
-        self.durability = durability
-        self.damage = damage
-        self.crit_chance = crit_chance
-        self.attacks = attacks
+class SoundPlayer:
+    def __init__(self, file):
+        super().__init__()
+        self.process = multiprocessing.Process(target=_play_audio, args=(file,))
+
+    def run(self):
+        self.process.start()
+
+    def stop(self):
+        self.process.terminate()
 
 
-class Melee(Weapon):
+class Window(ctk.CTk):  # Main (root) window and window controller
+    def __init__(self, *args, **kwargs):
+        ctk.CTk.__init__(self, *args, **kwargs)
+        self.title('Nyahh')
+        self.geometry('600x400')
+        self.configure()
+        self.sound_player = SoundPlayer('assets/neon-gaming-128925.wav')
+        self.after(1000, self.play_sound)
 
-    dodgechance = 0
+        # creating a frame and assigning it to container
+        self.frames = {}
+        container = ctk.CTkFrame(self)
+        container.pack(side='top', expand=True)
 
-    def __init__(self, name, durability, damage, crit_chance, attacks):
+        for F in (MainMenu, CharSelect, Options):
+            frame = F(container, self)
 
-        super().__init__(name, durability, damage, crit_chance, attacks)
+            self.frames[F] = frame
+            frame.grid(row=0, column=0, sticky='nsew')
 
-    def __str__(self):
-        return self.name
+        self.show_frame(MainMenu)
 
-    def attack(self):
-        pass
+    def show_frame(self, cont):
+        frame = self.frames[cont]
+        frame.tkraise()
 
+    def play_sound(self):
+        self.sound_player.run()
 
-class Range(Weapon):
-
-    def __init__(self, name, durability, damage, crit_chance, attacks, dodgechance):
-
-        super().__init__(name, durability, damage, crit_chance, attacks)
-        self.dodgechance = dodgechance
-
-    def __str__(self):
-        return self.name
-
-
-def weaponstats(x):
-    print(str(x.name) + ": Durability:" + str(x.durability) + "  Damage:" + str(x.damage) + "  Crit Chance:" + str(
-        x.crit_chance) + "  Turnes:" + str(x.attacks) + "  Dodgechance:" + str(x.dodgechance))
-
-
-def start_weapon():
-    startweapon_list = ["Bow (a) -- ", "Axe (b) -- ", "Dagger (c) -- "]
-    sw_1 = Range("Bow", 10, 10, 40, 2, 30)
-    sw_2 = Melee("Axe", 25, 15, 25, 1)
-    sw_3 = Melee("Dagger", 15, 10, 66, 2)
-    x = Melee("None", 0, 0, 0, 0)
-    startweapon = "0"
-    while startweapon == "0":
-        print("Choose your starter weapon: ")
-        for i in startweapon_list:
-            print(i, end="")
-        weap_sel = input("").lower()
-        if weap_sel == "a":
-            x = sw_1
-            weaponstats(x)
-        elif weap_sel == "b":
-            x = sw_2
-            weaponstats(x)
-        elif weap_sel == "c":
-            x = sw_3
-            weaponstats(x)
-        if input("Continue? Y/N").upper() == "Y":
-            startweapon = x
-    player.dodge = startweapon.dodgechance
-    return startweapon
-    # Weapon(name, durability, damage, crit_chance, attacks, dodgechance)
+    def on_closing(self):
+        try:
+            self.sound_player.stop()
+        finally:
+            self.destroy()
 
 
-def menu(player, monster, weapon):
-    print("------------------------------")
-    print("Player:", end="      ")
-    print("Monster:")
-    print("HP: "+str(player.hp), end="       ")
-    print("HP: "+str(monster.hp))
-    print("Dodge: "+str(player.dodge), end="     ")
-    print("Durability: " +str(weapon.durability))
+# Sets up the first Frame
+class MainMenu(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        ctk.CTkFrame.__init__(self, parent)
+
+        self.configure()
+
+        label = ctk.CTkLabel(self, text='Main Menu', height=150, width=300, font=('arial', 30))
+        label.pack()
+
+        btn_charselect = ctk.CTkButton(self, text='Start', font=('arial', 20), width=150,
+                                       command=lambda: controller.show_frame(CharSelect))
+        btn_options = ctk.CTkButton(self, text='Options', font=('arial', 20), width=150,
+                                    command=lambda: controller.show_frame(Options))
+        btn_closewindow = ctk.CTkButton(self, text='Exit Minigame', font=('arial', 20), width=150,
+                                        command=controller.on_closing)
+
+        btn_charselect.pack(padx=5, pady=5)
+        btn_options.pack(padx=5, pady=5)
+        btn_closewindow.pack(padx=10, pady=5)
 
 
-def restart(death):
-    if death == 0:
-        print("You died.")
-        if input("New game? Y/N").upper() == "Y":
-            pass
-        else:
-            return None
-    if death == 1:
-        print("The monster is dead!!")
-        print("You gained "+str(monster_main.reward)+" Gold!")
-        player.gold =+ monster_main.reward
+# Character select frame
+class CharSelect(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        ctk.CTkFrame.__init__(self, parent)
+
+        # Headline: Character select
+        label = ctk.CTkLabel(self, text="Character select")
+
+        # Adds tabs for each character
+        char_tabs = ctk.CTkTabview(self)
+        for i in get_char():
+            char_tabs.add(i.name)
+            char_description = ctk.CTkLabel(char_tabs.tab(i.name), text=i.description, justify='left')
+            char_description.grid(row=0, column=1, rowspan=2)
+
+        # Bottom Buttons
+        switch_window_button = ctk.CTkButton(self, text="Go back", command=lambda: controller.show_frame(MainMenu))
+        start_button = ctk.CTkButton(self, text='Start')
+
+        label.grid(row=0, column=0, padx=10, pady=10, columnspan=2)
+        char_tabs.grid(row=1, columnspan=2)
+        switch_window_button.grid(row=3, column=0)
+        start_button.grid(row=3, column=1)
 
 
-def newmonster():
-    return Monster("Goblin", 50, 10, 0, 1, 5)
+# Options Frame
+class Options(ctk.CTkFrame):
+    def __init__(self, parent, controller):
+        ctk.CTkFrame.__init__(self, parent)
+        label = ctk.CTkLabel(self, text="WIP")
+        label.pack(padx=10, pady=10)
+        switch_window_button = ctk.CTkButton(
+            self, text="Return to menu",
+            command=lambda: controller.show_frame(MainMenu)
+        )
+        switch_window_button.pack(side="bottom", fill=ctk.X)
 
 
-def round_start(weapon, monster):
-    for i in range(weapon.attacks): #Repeating for each attack
-        inp = " "
-        while inp not in "ad": #Choosing action
-            print("Your turn. "+str(i+1)+" from "+str(weapon.attacks))
-            inp = input("Attack[A] or dodge 20 up[D]? ").lower()
-            print("------------------------------")
-            if inp == "a": #Attack calculation
-                dmg = attack(weapon, monster)
-                print("You did "+str(dmg)+" Damage.")
-                print("The Monster has "+str(monster.hp)+"HP left.")
-                print("Youre "+str(weapon)+" has "+str(weapon.durability)+" durability left.")
-                break
-            elif inp == "d": #Dodge up
-                player.dodge = player.dodge + 20
-                print("Dodge up to "+str(player.dodge))
-                break
-
-
-def m_attack_ini(monsterdmg, hp, weapon):
-    r = random.randint(1, 100)
-    if player.dodge < r:
-        hp = hp - monsterdmg.damage
-        print("The monster hit for "+str(monsterdmg.damage)+" Damage!")
-    else:
-        print("You dodged the enemys attack")
-    player.dodge = weapon.dodgechance
-    time.sleep(1)
-    return hp
-
-
-def weaponselect():
-    inp = ""
-    while inp not in "ABC":
-        for i in weaponlist:
-            continue
-
-
-def attack(weapon, monster):
-    r = random.randint(1, 100)
-    weapon.durability = weapon.durability - 1
-    if r < weapon.crit_chance:
-        dmg = weapon.damage * 2
-        monster.hp = monster.hp - dmg
-        print("Crit Hit!!!")
-    else:
-        dmg = weapon.damage
-        monster.hp = monster.hp - dmg
-        print("Hit!")
-    return dmg
-
-
-def run():
-    con = True
-    while con: #Initialize start
-        player = Player(100, 30, 20)
-        monster_main = newmonster()
-#        weaponlist = [] #unused, later inventory system?
-        weapon_1 = start_weapon() #Initializes start weapon
-#        weaponlist.append(weapon_1)
-        while player.hp > 0: #Gameloop rn
-            # weaponselect() #weapon select for the inventory system?
-            menu(player, monster_main, weapon_1)
-            round_start(weapon_1, monster_main)
-            player.hp = m_attack_ini(monster_main, player.hp, weapon_1)
-            if player.hp < 1: #Check if player is dead
-                con = restart(0)
-            if monster_main.hp < 1: #Check if monster is dead
-                restart(1)
-                monster_main = newmonster()
-
-
-# Monster(name, hp, damage, crit_chance, attacks, dodge)
-# Weapon (name,  durability, damage, crit_chance, attacks):
-player = Player(100, 30, 20)
-monster_main = Monster("Goblin", 50, 10, 0, 1, 5)
-weapon_1 = Weapon("Empty", 0, 0, 0, 0)
-weaponlist = []
-
-if __name__ == "__main__" :
-    run()
-
+if __name__ == '__main__':
+    root = Window()
+    root.protocol("WM_DELETE_WINDOW", root.on_closing)
+    root.mainloop()

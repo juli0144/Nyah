@@ -1,4 +1,12 @@
-Smol game wich is textbased rn, made with Python 10 but should work on a lot of versions of python.
-Input and output are console based rn
+New aproach on my minigame with the GUI CustomTkinter
+
+
+Made with Python 3.11.7
+
+Packages used = [
+playsound,
+Pillow,
+customtkinter
+]
 
 I love my kitty cat
