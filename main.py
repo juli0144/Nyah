@@ -1,5 +1,6 @@
 import multiprocessing
-import playsound
+from pydub import AudioSegment
+from pydub.playback import play
 import customtkinter as ctk
 from PIL import Image
 
@@ -12,14 +13,15 @@ def load_image(file):
     # ImageTk.PhotoImage(Image.open(file))
 
 
-def _play_audio(audiofile):
-    playsound.playsound(audiofile)
+def _play_audio(audio):
+    play(audio)
 
 
 class SoundPlayer:
     def __init__(self, file):
         super().__init__()
-        self.process = multiprocessing.Process(target=_play_audio, args=(file,))
+        self.song = AudioSegment.from_wav(file)
+        self.process = multiprocessing.Process(target=_play_audio, args=(self.song, ))
 
     def run(self):
         self.process.start()
