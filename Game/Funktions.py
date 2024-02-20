@@ -1,4 +1,9 @@
-# Funktions for Buttons
+import customtkinter as ctk
+from PIL import Image
+
+
+def load_image(file, size):
+    return ctk.CTkImage(Image.open(file), size=size)
 
 
 class Item:
@@ -56,13 +61,13 @@ def weapon_create_dagger():
 
 
 class Player:
-    def __init__(self, name, description, hp, strength, turns):
+    def __init__(self, name, description, hp, base_strength, turns):
         self.name = name
         self.description = description
 
         self.hp = hp
         self.max_hp = hp
-        self.strength = strength
+        self.base_strength = base_strength
         self.turns = turns
 
         self.inventory = []
@@ -77,7 +82,6 @@ class Player:
         self.stage = 0
 
     def item_add(self, item):
-
         for i in range(self.inventory_size):
             if self.inventory[i].name == '[empty]':
                 self.inventory[i] = item
@@ -116,3 +120,28 @@ def get_char():
     assassin.item_add(weapon_create_dagger())
     # Returning classes in a list
     return [fighter, assassin]
+
+
+class Enemy(ctk.CTkFrame):
+    def __init__(self, parent, name, hp, damage, image):
+        ctk.CTkFrame.__init__(self, parent)
+        self.name = name
+        self.hp = hp
+        self.label_hp = ctk.StringVar(self, f"HP: {hp}")
+        self.damage = ctk.IntVar(self, damage)
+        self.reward = hp * damage / 100
+
+        name = ctk.CTkLabel(self, text=self.name, height=10)
+        hp = ctk.CTkLabel(self, textvariable=self.label_hp, height=10)
+        pic = ctk.CTkLabel(self, text='', image=image)
+
+        name.pack()
+        hp.pack()
+        pic.pack()
+
+
+def get_enemy_start(frame):
+    pic_size = (50, 90)
+    return [Enemy(frame, 'Skill', 20, 10, load_image('assets/placeholder.png', pic_size))]
+
+#            return [Enemy('Mika', random.randint(20, 40), 15)]
